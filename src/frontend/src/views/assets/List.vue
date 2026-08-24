@@ -95,11 +95,25 @@
           </span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="220" fixed="right">
+      <el-table-column width="220" fixed="right" align="center">
+        <template #header>
+          <div class="action-header">
+            <el-icon color="#3b82f6"><Setting /></el-icon>
+            <span>管理操作</span>
+          </div>
+        </template>
         <template #default="scope">
-          <el-button link type="primary" size="small" @click="openEditDialog(scope.row)">编辑</el-button>
-          <el-button link type="warning" size="small" @click="openSimulateDialog(scope.row)">模拟压力</el-button>
-          <el-button link type="danger" size="small" @click="handleDelete(scope.row)">删除</el-button>
+          <div class="action-btn-group">
+            <button class="ops-act-btn edit-btn" @click="openEditDialog(scope.row)">
+              <el-icon><Edit /></el-icon>编辑
+            </button>
+            <button class="ops-act-btn sim-btn" @click="openSimulateDialog(scope.row)">
+              <el-icon><Odometer /></el-icon>压力
+            </button>
+            <button class="ops-act-btn del-btn" @click="handleDelete(scope.row)">
+              <el-icon><Delete /></el-icon>删除
+            </button>
+          </div>
         </template>
       </el-table-column>
     </el-table>
@@ -358,6 +372,75 @@ onUnmounted(() => {
 .flex-center {
   display: flex;
   align-items: center;
+}
+
+.action-header {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: center;
+  font-weight: 600;
+  color: #cbd5e1;
+}
+
+.action-btn-group {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.ops-act-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 9px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  outline: none;
+  border: none;
+}
+
+.ops-act-btn.edit-btn {
+  background: rgba(59, 130, 246, 0.14);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+.ops-act-btn.edit-btn:hover {
+  background: rgba(59, 130, 246, 0.28);
+  color: #93c5fd;
+  border-color: #3b82f6;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.ops-act-btn.sim-btn {
+  background: rgba(245, 158, 11, 0.14);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+.ops-act-btn.sim-btn:hover {
+  background: rgba(245, 158, 11, 0.28);
+  color: #fde047;
+  border-color: #f59e0b;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+}
+
+.ops-act-btn.del-btn {
+  background: rgba(239, 68, 68, 0.14);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+.ops-act-btn.del-btn:hover {
+  background: rgba(239, 68, 68, 0.28);
+  color: #fca5a5;
+  border-color: #ef4444;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
 }
 
 .gap-12 {

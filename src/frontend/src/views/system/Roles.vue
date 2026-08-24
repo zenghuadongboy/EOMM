@@ -17,9 +17,9 @@
               <span class="name">{{ r.name }}</span>
               <code>{{ r.code }}</code>
             </div>
-            <el-button type="primary" size="small" icon="Key" plain @click="openPermissionModal(r)">
-              授权矩阵
-            </el-button>
+            <button class="ops-act-btn primary-btn" @click="openPermissionModal(r)">
+              <el-icon><Key /></el-icon>授权矩阵
+            </button>
           </div>
 
           <p class="role-desc">{{ r.description }}</p>

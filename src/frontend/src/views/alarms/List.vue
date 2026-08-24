@@ -61,16 +61,21 @@
           <span v-else class="sub-text">未派单处置</span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="140" fixed="right">
+      <el-table-column width="140" fixed="right" align="center">
+        <template #header>
+          <div class="action-header">
+            <el-icon color="#3b82f6"><Setting /></el-icon>
+            <span>工单操作</span>
+          </div>
+        </template>
         <template #default="scope">
-          <el-button
+          <button
             v-if="scope.row.status === 'Pending' || scope.row.status === 'Processing'"
-            type="primary"
-            size="small"
+            class="ops-act-btn edit-btn"
             @click="openProcessDialog(scope.row)"
           >
-            响应处置
-          </el-button>
+            <el-icon><Edit /></el-icon>响应处置
+          </button>
           <span v-else class="sub-text">已归档</span>
         </template>
       </el-table-column>

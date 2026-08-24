@@ -75,6 +75,105 @@ body {
   --el-table-row-hover-bg-color: rgba(51, 65, 85, 0.6) !important;
 }
 
+/* 解决全站 Element Plus 右侧固定操作列背景透明导致的字段透视重合问题 */
+.el-table th.el-table-fixed-column--right,
+.el-table td.el-table-fixed-column--right,
+.el-table th.el-table__fixed-right-column,
+.el-table td.el-table__fixed-right-column,
+.el-table__fixed-right,
+.el-table__fixed-right-patch {
+  background-color: #1e293b !important;
+  background: #1e293b !important;
+  z-index: 3 !important;
+}
+
+.el-table tr:hover td.el-table-fixed-column--right,
+.el-table tr:hover td.el-table__fixed-right-column {
+  background-color: #27354a !important;
+  background: #27354a !important;
+}
+
+.el-table td.el-table-fixed-column--right,
+.el-table td.el-table__fixed-right-column {
+  box-shadow: -4px 0 10px rgba(0, 0, 0, 0.4);
+}
+
+/* 全局通用高颜值微型极客胶囊操作按钮样式 */
+.action-header {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: center;
+  font-weight: 600;
+  color: #cbd5e1;
+}
+
+.action-btn-group {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.ops-act-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 9px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  outline: none;
+  border: none;
+}
+
+.ops-act-btn.edit-btn,
+.ops-act-btn.primary-btn {
+  background: rgba(59, 130, 246, 0.14);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+.ops-act-btn.edit-btn:hover,
+.ops-act-btn.primary-btn:hover {
+  background: rgba(59, 130, 246, 0.28);
+  color: #93c5fd;
+  border-color: #3b82f6;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.ops-act-btn.sim-btn,
+.ops-act-btn.warn-btn {
+  background: rgba(245, 158, 11, 0.14);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+.ops-act-btn.sim-btn:hover,
+.ops-act-btn.warn-btn:hover {
+  background: rgba(245, 158, 11, 0.28);
+  color: #fde047;
+  border-color: #f59e0b;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+}
+
+.ops-act-btn.del-btn,
+.ops-act-btn.danger-btn {
+  background: rgba(239, 68, 68, 0.14);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+.ops-act-btn.del-btn:hover,
+.ops-act-btn.danger-btn:hover {
+  background: rgba(239, 68, 68, 0.28);
+  color: #fca5a5;
+  border-color: #ef4444;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
 .el-card {
   background-color: var(--bg-card) !important;
   border-color: var(--border-color) !important;

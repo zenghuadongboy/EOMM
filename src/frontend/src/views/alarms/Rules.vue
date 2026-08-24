@@ -43,10 +43,22 @@
           <el-switch v-model="scope.row.isEnabled" @change="toggleRuleStatus(scope.row)" />
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="140" fixed="right">
+      <el-table-column width="160" fixed="right" align="center">
+        <template #header>
+          <div class="action-header">
+            <el-icon color="#3b82f6"><Operation /></el-icon>
+            <span>策略操作</span>
+          </div>
+        </template>
         <template #default="scope">
-          <el-button link type="primary" size="small" @click="openEditDialog(scope.row)">编辑</el-button>
-          <el-button link type="danger" size="small" @click="handleDelete(scope.row)">删除</el-button>
+          <div class="action-btn-group">
+            <button class="ops-act-btn edit-btn" @click="openEditDialog(scope.row)">
+              <el-icon><Edit /></el-icon>编辑
+            </button>
+            <button class="ops-act-btn del-btn" @click="handleDelete(scope.row)">
+              <el-icon><Delete /></el-icon>删除
+            </button>
+          </div>
         </template>
       </el-table-column>
     </el-table>

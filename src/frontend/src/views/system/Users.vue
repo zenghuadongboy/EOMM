@@ -38,10 +38,22 @@
           {{ formatDate(scope.row.lastLoginAt) }}
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="180" fixed="right">
+      <el-table-column width="190" fixed="right" align="center">
+        <template #header>
+          <div class="action-header">
+            <el-icon color="#3b82f6"><User /></el-icon>
+            <span>账号操作</span>
+          </div>
+        </template>
         <template #default="scope">
-          <el-button link type="primary" size="small" @click="openEditDialog(scope.row)">编辑</el-button>
-          <el-button link type="warning" size="small" @click="handleResetPwd(scope.row)">重置密码</el-button>
+          <div class="action-btn-group">
+            <button class="ops-act-btn edit-btn" @click="openEditDialog(scope.row)">
+              <el-icon><Edit /></el-icon>编辑
+            </button>
+            <button class="ops-act-btn warn-btn" @click="handleResetPwd(scope.row)">
+              <el-icon><RefreshRight /></el-icon>重置
+            </button>
+          </div>
         </template>
       </el-table-column>
     </el-table>
