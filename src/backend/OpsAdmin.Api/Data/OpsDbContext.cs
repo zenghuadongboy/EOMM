@@ -14,6 +14,8 @@ namespace OpsAdmin.Api.Data
         public DbSet<Asset> Assets { get; set; }
         public DbSet<AlarmRule> AlarmRules { get; set; }
         public DbSet<AlarmRecord> AlarmRecords { get; set; }
+        public DbSet<WorkOrder> WorkOrders { get; set; }
+        public DbSet<WorkOrderLog> WorkOrderLogs { get; set; }
         public DbSet<OperationLog> OperationLogs { get; set; }
         public DbSet<SystemLog> SystemLogs { get; set; }
 
@@ -34,6 +36,10 @@ namespace OpsAdmin.Api.Data
 
             modelBuilder.Entity<AlarmRecord>()
                 .HasIndex(ar => ar.AlarmNo)
+                .IsUnique();
+
+            modelBuilder.Entity<WorkOrder>()
+                .HasIndex(w => w.WorkOrderNo)
                 .IsUnique();
         }
     }

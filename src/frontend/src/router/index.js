@@ -39,6 +39,12 @@ const routes = [
         meta: { title: '自动化告警策略配置', requiresAuth: true }
       },
       {
+        path: 'workorders',
+        name: 'WorkOrders',
+        component: () => import('../views/workorders/List.vue'),
+        meta: { title: '运维工单全流程管理', requiresAuth: true }
+      },
+      {
         path: 'system/users',
         name: 'SystemUsers',
         component: () => import('../views/system/Users.vue'),

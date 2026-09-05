@@ -25,6 +25,11 @@
           <span>设备资产全生命周期</span>
         </el-menu-item>
 
+        <el-menu-item index="/workorders">
+          <el-icon><Tickets /></el-icon>
+          <span>运维工单全流程管理</span>
+        </el-menu-item>
+
         <el-sub-menu index="alarms">
           <template #title>
             <el-icon><Bell /></el-icon>
@@ -49,7 +54,7 @@
         <div class="widget-title">
           <span class="pulse-dot online"></span> 后台服务正常运行
         </div>
-        <div class="widget-info">ASP.NET Core 8.0 | SQLite</div>
+        <div class="widget-info">ASP.NET Core 8.0 | MySQL | Redis</div>
       </div>
     </el-aside>
 
