@@ -17,7 +17,7 @@
       >
         <el-menu-item index="/dashboard" v-if="hasPerm('dashboard:view')">
           <el-icon><DataAnalysis /></el-icon>
-          <span>统计分析 (大屏)</span>
+          <span>Dashboard首页</span>
         </el-menu-item>
 
         <el-menu-item index="/assets" v-if="hasPerm('asset:view')">
