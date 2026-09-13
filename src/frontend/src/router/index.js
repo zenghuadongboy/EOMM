@@ -67,7 +67,7 @@ const routes = [
         path: 'system/logs',
         name: 'SystemLogs',
         component: () => import('../views/system/Logs.vue'),
-        meta: { title: '全量操作审计与系统日志', requiresAuth: true, permCode: 'system:log' }
+        meta: { title: '日志模块管理', requiresAuth: true, permCode: 'system:log' }
       }
     ]
   }

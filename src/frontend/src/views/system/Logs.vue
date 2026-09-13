@@ -1,5 +1,9 @@
 <template>
   <div class="logs-page ops-glass-card">
+    <div class="ops-card-title mb-3">
+      <el-icon color="#3b82f6"><Document /></el-icon>
+      <span>日志模块管理</span>
+    </div>
     <el-tabs v-model="activeTab">
       <!-- Tab 1: Operation Audit Logs -->
       <el-tab-pane label="全量用户操作行为审计日志" name="operation">
@@ -111,6 +115,7 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
+import { Document } from '@element-plus/icons-vue'
 import { getOperationLogs, getSystemLogs } from '../../api'
 import { formatDate } from '../../utils/date'
 
