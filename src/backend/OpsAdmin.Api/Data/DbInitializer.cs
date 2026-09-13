@@ -244,30 +244,32 @@ namespace OpsAdmin.Api.Data
 
         private static void EnsureSystemPermissionExists(OpsDbContext context)
         {
-            var perm = context.Permissions.FirstOrDefault(p => p.PermissionCode == "system:permission");
-            if (perm == null)
+            var requiredPerms = new List<SysPermission>
             {
-                perm = new SysPermission
-                {
-                    PermissionCode = "system:permission",
-                    PermissionName = "权限节点管理",
-                    Path = "/system/permissions",
-                    Method = "GET",
-                    Description = "配置与维护功能节点",
-                    CreateTime = DateTime.Now
-                };
-                context.Permissions.Add(perm);
-                context.SaveChanges();
-            }
+                new SysPermission { PermissionCode = "system:permission", PermissionName = "权限节点管理", Path = "/system/permissions", Method = "GET", Description = "配置与维护功能节点", CreateTime = DateTime.Now },
+                new SysPermission { PermissionCode = "monitoring:view", PermissionName = "设备监控管理", Path = "/monitoring", Method = "GET", Description = "设备实时状态与性能指标监控", CreateTime = DateTime.Now },
+                new SysPermission { PermissionCode = "system:setting", PermissionName = "系统管理设置", Path = "/system/settings", Method = "GET", Description = "系统基础配置与参数管理", CreateTime = DateTime.Now }
+            };
 
-            var adminRole = context.Roles.FirstOrDefault(r => r.RoleCode == "Admin");
-            if (adminRole != null)
+            foreach (var item in requiredPerms)
             {
-                var hasRel = context.RolePermissions.Any(rp => rp.RoleId == adminRole.Id && rp.PermissionId == perm.Id);
-                if (!hasRel)
+                var perm = context.Permissions.FirstOrDefault(p => p.PermissionCode == item.PermissionCode);
+                if (perm == null)
                 {
-                    context.RolePermissions.Add(new SysRolePermission { RoleId = adminRole.Id, PermissionId = perm.Id });
+                    perm = item;
+                    context.Permissions.Add(perm);
                     context.SaveChanges();
+                }
+
+                var adminRole = context.Roles.FirstOrDefault(r => r.RoleCode == "Admin");
+                if (adminRole != null)
+                {
+                    var hasRel = context.RolePermissions.Any(rp => rp.RoleId == adminRole.Id && rp.PermissionId == perm.Id);
+                    if (!hasRel)
+                    {
+                        context.RolePermissions.Add(new SysRolePermission { RoleId = adminRole.Id, PermissionId = perm.Id });
+                        context.SaveChanges();
+                    }
                 }
             }
         }

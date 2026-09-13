@@ -17,7 +17,7 @@
       >
         <el-menu-item index="/dashboard" v-if="hasPerm('dashboard:view')">
           <el-icon><DataAnalysis /></el-icon>
-          <span>运维监控大屏</span>
+          <span>统计分析 (大屏)</span>
         </el-menu-item>
 
         <el-menu-item index="/assets" v-if="hasPerm('asset:view')">
@@ -25,30 +25,44 @@
           <span>设备资产管理</span>
         </el-menu-item>
 
-        <el-menu-item index="/workorders" v-if="hasPerm('asset:view') || hasPerm('alarm:view')">
-          <el-icon><Tickets /></el-icon>
-          <span>运维工单全流程管理</span>
+        <el-menu-item index="/monitoring" v-if="hasPerm('monitoring:view')">
+          <el-icon><Odometer /></el-icon>
+          <span>设备监控管理</span>
         </el-menu-item>
 
         <el-sub-menu index="alarms" v-if="hasPerm('alarm:view') || hasPerm('alarm:rule')">
           <template #title>
             <el-icon><Bell /></el-icon>
-            <span>告警中心与策略</span>
+            <span>告警管理</span>
           </template>
-          <el-menu-item index="/alarms" v-if="hasPerm('alarm:view')">告警管理</el-menu-item>
-          <el-menu-item index="/alarms/rules" v-if="hasPerm('alarm:rule')">自动化告警规则</el-menu-item>
+          <el-menu-item index="/alarms" v-if="hasPerm('alarm:view')">告警记录查询</el-menu-item>
+          <el-menu-item index="/alarms/rules" v-if="hasPerm('alarm:rule')">告警规则管理</el-menu-item>
         </el-sub-menu>
 
-        <el-sub-menu index="system" v-if="hasPerm('system:user') || hasPerm('system:role') || hasPerm('system:permission') || hasPerm('system:log')">
+        <el-menu-item index="/workorders" v-if="hasPerm('asset:view') || hasPerm('alarm:view')">
+          <el-icon><Tickets /></el-icon>
+          <span>工单管理</span>
+        </el-menu-item>
+
+        <el-menu-item index="/system/logs" v-if="hasPerm('system:log')">
+          <el-icon><Document /></el-icon>
+          <span>日志审计</span>
+        </el-menu-item>
+
+        <el-sub-menu index="user-perm" v-if="hasPerm('system:user') || hasPerm('system:role') || hasPerm('system:permission')">
           <template #title>
-            <el-icon><Setting /></el-icon>
-            <span>系统与安全审计</span>
+            <el-icon><User /></el-icon>
+            <span>用户与权限管理</span>
           </template>
-          <el-menu-item index="/system/users" v-if="hasPerm('system:user')">用户账号管理</el-menu-item>
-          <el-menu-item index="/system/roles" v-if="hasPerm('system:role')">RBAC 角色权限</el-menu-item>
+          <el-menu-item index="/system/users" v-if="hasPerm('system:user')">用户管理</el-menu-item>
+          <el-menu-item index="/system/roles" v-if="hasPerm('system:role')">角色管理</el-menu-item>
           <el-menu-item index="/system/permissions" v-if="hasPerm('system:permission')">权限节点管理</el-menu-item>
-          <el-menu-item index="/system/logs" v-if="hasPerm('system:log')">日志模块管理</el-menu-item>
         </el-sub-menu>
+
+        <el-menu-item index="/system/settings" v-if="hasPerm('system:setting')">
+          <el-icon><Setting /></el-icon>
+          <span>系统管理</span>
+        </el-menu-item>
       </el-menu>
 
       <div class="system-status-widget">

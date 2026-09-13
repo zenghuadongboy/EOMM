@@ -68,6 +68,18 @@ const routes = [
         name: 'SystemLogs',
         component: () => import('../views/system/Logs.vue'),
         meta: { title: '日志模块管理', requiresAuth: true, permCode: 'system:log' }
+      },
+      {
+        path: 'monitoring',
+        name: 'DeviceMonitoring',
+        component: () => import('../views/monitoring/Index.vue'),
+        meta: { title: '设备监控管理', requiresAuth: true, permCode: 'monitoring:view' }
+      },
+      {
+        path: 'system/settings',
+        name: 'SystemSettings',
+        component: () => import('../views/system/Settings.vue'),
+        meta: { title: '系统管理设置', requiresAuth: true, permCode: 'system:setting' }
       }
     ]
   }
