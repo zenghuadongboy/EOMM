@@ -22,7 +22,7 @@
 
         <el-menu-item index="/assets" v-if="hasPerm('asset:view')">
           <el-icon><Cpu /></el-icon>
-          <span>设备资产全生命周期</span>
+          <span>设备资产管理</span>
         </el-menu-item>
 
         <el-menu-item index="/workorders" v-if="hasPerm('asset:view') || hasPerm('alarm:view')">

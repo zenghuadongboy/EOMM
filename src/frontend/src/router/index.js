@@ -25,7 +25,7 @@ const routes = [
         path: 'assets',
         name: 'Assets',
         component: () => import('../views/assets/List.vue'),
-        meta: { title: 'IT设备资产全生命周期管理', requiresAuth: true, permCode: 'asset:view' }
+        meta: { title: '设备资产管理', requiresAuth: true, permCode: 'asset:view' }
       },
       {
         path: 'alarms',

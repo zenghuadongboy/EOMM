@@ -3,7 +3,7 @@
     <div class="ops-card-title search-bar">
       <div class="title-left">
         <el-icon color="#3b82f6"><Cpu /></el-icon>
-        IT 设备资产全生命周期管理台账
+        设备资产管理
       </div>
       <div class="actions-right flex-center gap-12">
         <div class="realtime-indicator">
