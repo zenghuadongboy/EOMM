@@ -35,7 +35,7 @@
             <el-icon><Bell /></el-icon>
             <span>告警中心与策略</span>
           </template>
-          <el-menu-item index="/alarms" v-if="hasPerm('alarm:view')">告警记录与闭环</el-menu-item>
+          <el-menu-item index="/alarms" v-if="hasPerm('alarm:view')">告警管理</el-menu-item>
           <el-menu-item index="/alarms/rules" v-if="hasPerm('alarm:rule')">自动化告警规则</el-menu-item>
         </el-sub-menu>
 

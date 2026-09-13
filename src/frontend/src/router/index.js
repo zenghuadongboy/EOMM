@@ -31,7 +31,7 @@ const routes = [
         path: 'alarms',
         name: 'Alarms',
         component: () => import('../views/alarms/List.vue'),
-        meta: { title: '告警中心与处置闭环', requiresAuth: true, permCode: 'alarm:view' }
+        meta: { title: '告警管理', requiresAuth: true, permCode: 'alarm:view' }
       },
       {
         path: 'alarms/rules',

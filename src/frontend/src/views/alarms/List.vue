@@ -2,7 +2,7 @@
   <div class="alarms-page ops-glass-card">
     <div class="ops-card-title">
       <el-icon color="#ef4444"><Bell /></el-icon>
-      运维告警中心与工单闭环处置
+      告警管理
     </div>
 
     <!-- Filter -->
