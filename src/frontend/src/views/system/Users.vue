@@ -59,7 +59,7 @@
     </el-table>
 
     <!-- Dialog -->
-    <el-dialog v-model="showModal" :title="form.id === 0 ? '创建新运维账号' : '修改账号信息'" width="480px">
+    <el-dialog v-model="showModal" :title="form.id === 0 ? '创建新运维账号' : '修改账号信息'" width="480px" append-to-body align-center>
       <el-form :model="form" label-width="90px">
         <el-form-item label="登录用户名">
           <el-input v-model="form.username" :disabled="form.id !== 0" placeholder="例如: zhang_ops" />

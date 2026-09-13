@@ -6,6 +6,8 @@ const service = axios.create({
   timeout: 10000
 })
 
+let isRelogging = false
+
 service.interceptors.request.use(
   config => {
     const token = localStorage.getItem('ops_token')
@@ -22,7 +24,7 @@ service.interceptors.request.use(
 service.interceptors.response.use(
   response => {
     const res = response.data
-    if (res.success === false) {
+    if (res.success === false || (res.code && res.code !== 200)) {
       ElMessage.error(res.message || '操作失败')
       return Promise.reject(new Error(res.message || 'Error'))
     }
@@ -30,12 +32,19 @@ service.interceptors.response.use(
   },
   error => {
     if (error.response && error.response.status === 401) {
-      ElMessage.error('登录状态已失效，请重新登录')
-      localStorage.removeItem('ops_token')
-      localStorage.removeItem('ops_user')
-      window.location.href = '/#/login'
+      if (!isRelogging) {
+        isRelogging = true
+        ElMessage.error('登录状态已失效，请重新登录')
+        localStorage.removeItem('ops_token')
+        localStorage.removeItem('ops_user')
+        localStorage.removeItem('ops_perms')
+        setTimeout(() => {
+          window.location.href = '/#/login'
+          isRelogging = false
+        }, 500)
+      }
     } else {
-      ElMessage.error(error.message || '服务器连接异常')
+      ElMessage.error(error.response?.data?.message || error.message || '服务器连接异常')
     }
     return Promise.reject(error)
   }

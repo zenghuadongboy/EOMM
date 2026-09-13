@@ -27,7 +27,7 @@ namespace OpsAdmin.Api.Services
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim(ClaimTypes.Name, user.Username),
+                new Claim(ClaimTypes.Name, user.UserName),
                 new Claim("RealName", user.RealName ?? ""),
                 new Claim(ClaimTypes.Role, roleCode)
             };
@@ -41,7 +41,7 @@ namespace OpsAdmin.Api.Services
                 issuer: issuer,
                 audience: audience,
                 claims: claims,
-                expires: DateTime.Now.AddHours(4),
+                expires: DateTime.Now.AddHours(8),
                 signingCredentials: credentials);
 
             return new JwtSecurityTokenHandler().WriteToken(token);

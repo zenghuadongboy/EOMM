@@ -19,22 +19,27 @@ namespace OpsAdmin.Api.Controllers
             _context = context;
         }
 
+        [HttpGet("types")]
+        public async Task<ActionResult<ApiResponse<List<AssetType>>>> GetAssetTypes()
+        {
+            var types = await _context.AssetTypes.OrderBy(t => t.Id).ToListAsync();
+            return Ok(ApiResponse<List<AssetType>>.Ok(types));
+        }
+
         [HttpGet("list")]
         public async Task<ActionResult<ApiResponse<PagedResult<Asset>>>> GetList([FromQuery] AssetQueryRequest query)
         {
-            var q = _context.Assets.AsQueryable();
+            var q = _context.Assets
+                .Include(a => a.AssetType)
+                .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(query.Keyword))
             {
-                q = q.Where(a => a.Name.Contains(query.Keyword) || a.AssetNo.Contains(query.Keyword) || a.IpAddress.Contains(query.Keyword));
+                q = q.Where(a => a.AssetName.Contains(query.Keyword) || a.AssetNo.Contains(query.Keyword) || a.IpAddress.Contains(query.Keyword));
             }
             if (!string.IsNullOrWhiteSpace(query.Type))
             {
-                q = q.Where(a => a.Type == query.Type);
-            }
-            if (!string.IsNullOrWhiteSpace(query.Department))
-            {
-                q = q.Where(a => a.Department == query.Department);
+                q = q.Where(a => a.AssetType != null && a.AssetType.TypeName == query.Type);
             }
             if (!string.IsNullOrWhiteSpace(query.Status))
             {
@@ -61,7 +66,10 @@ namespace OpsAdmin.Api.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<ApiResponse<Asset>>> GetById(int id)
         {
-            var asset = await _context.Assets.FindAsync(id);
+            var asset = await _context.Assets
+                .Include(a => a.AssetType)
+                .FirstOrDefaultAsync(a => a.Id == id);
+
             if (asset == null) return Ok(ApiResponse<Asset>.Fail("资产未找到"));
             return Ok(ApiResponse<Asset>.Ok(asset));
         }
@@ -72,9 +80,14 @@ namespace OpsAdmin.Api.Controllers
             var username = User.Identity?.Name ?? "system";
             Asset? entity;
 
+            // 获取/校验设备类型
+            var assetType = await _context.AssetTypes.FirstOrDefaultAsync(t => t.TypeName == req.Type || t.TypeCode == req.Type)
+                            ?? await _context.AssetTypes.FirstOrDefaultAsync();
+
+            var assetTypeId = assetType?.Id ?? 1;
+
             if (req.Id == 0)
             {
-                // Check duplicate AssetNo
                 if (await _context.Assets.AnyAsync(a => a.AssetNo == req.AssetNo))
                 {
                     return Ok(ApiResponse<Asset>.Fail($"设备编号 [{req.AssetNo}] 已存在"));
@@ -83,20 +96,13 @@ namespace OpsAdmin.Api.Controllers
                 entity = new Asset
                 {
                     AssetNo = req.AssetNo,
-                    Name = req.Name,
-                    Type = req.Type,
+                    AssetName = req.Name,
+                    AssetTypeId = assetTypeId,
                     IpAddress = req.IpAddress,
-                    Port = req.Port,
-                    Department = req.Department,
-                    Manager = req.Manager,
+                    Location = req.Department, // 使用部门或具体机房作为位置
                     Status = req.Status,
-                    HardwareSpec = req.HardwareSpec,
-                    PurchaseDate = req.PurchaseDate,
-                    MaintenanceExpire = req.MaintenanceExpire,
-                    CpuUsage = 15.0,
-                    MemoryUsage = 35.0,
-                    DiskUsage = 20.0,
-                    UpdatedAt = DateTime.Now
+                    Description = string.IsNullOrWhiteSpace(req.HardwareSpec) ? $"责任人: {req.Manager}" : req.HardwareSpec,
+                    CreateTime = DateTime.Now
                 };
                 _context.Assets.Add(entity);
             }
@@ -105,20 +111,14 @@ namespace OpsAdmin.Api.Controllers
                 entity = await _context.Assets.FindAsync(req.Id);
                 if (entity == null) return Ok(ApiResponse<Asset>.Fail("修改的资产不存在"));
 
-                entity.Name = req.Name;
-                entity.Type = req.Type;
+                entity.AssetName = req.Name;
+                entity.AssetTypeId = assetTypeId;
                 entity.IpAddress = req.IpAddress;
-                entity.Port = req.Port;
-                entity.Department = req.Department;
-                entity.Manager = req.Manager;
+                entity.Location = req.Department;
                 entity.Status = req.Status;
-                entity.HardwareSpec = req.HardwareSpec;
-                entity.PurchaseDate = req.PurchaseDate;
-                entity.MaintenanceExpire = req.MaintenanceExpire;
-                entity.UpdatedAt = DateTime.Now;
+                entity.Description = string.IsNullOrWhiteSpace(req.HardwareSpec) ? $"责任人: {req.Manager}" : req.HardwareSpec;
             }
 
-            // Audit
             _context.OperationLogs.Add(new OperationLog
             {
                 Username = username,
@@ -152,7 +152,7 @@ namespace OpsAdmin.Api.Controllers
                 IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1",
                 RequestParam = $"{{ id: {id} }}",
                 Success = true,
-                Description = $"删除了资产设备 [{asset.Name}]",
+                Description = $"删除了资产设备 [{asset.AssetName}]",
                 CreatedAt = DateTime.Now
             });
 
@@ -168,10 +168,6 @@ namespace OpsAdmin.Api.Controllers
             if (asset == null) return Ok(ApiResponse<Asset>.Fail("资产不存在"));
 
             if (!string.IsNullOrWhiteSpace(req.Status)) asset.Status = req.Status;
-            if (req.CpuUsage.HasValue) asset.CpuUsage = req.CpuUsage.Value;
-            if (req.MemoryUsage.HasValue) asset.MemoryUsage = req.MemoryUsage.Value;
-            if (req.DiskUsage.HasValue) asset.DiskUsage = req.DiskUsage.Value;
-            asset.UpdatedAt = DateTime.Now;
 
             _context.OperationLogs.Add(new OperationLog
             {
@@ -179,14 +175,14 @@ namespace OpsAdmin.Api.Controllers
                 Module = "资产监控",
                 Action = "指标模拟",
                 IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1",
-                RequestParam = $"{{ assetId: {asset.Id}, cpu: {asset.CpuUsage}, status: '{asset.Status}' }}",
+                RequestParam = $"{{ assetId: {asset.Id}, status: '{asset.Status}' }}",
                 Success = true,
-                Description = $"手动模拟变更设备 [{asset.Name}] 指标参数",
+                Description = $"手动模拟变更设备 [{asset.AssetName}] 状态",
                 CreatedAt = DateTime.Now
             });
 
             await _context.SaveChangesAsync();
-            return Ok(ApiResponse<Asset>.Ok(asset, "模拟指标更新成功，告警引擎将在数秒内重新计算"));
+            return Ok(ApiResponse<Asset>.Ok(asset, "模拟状态更新成功"));
         }
     }
 }

@@ -22,6 +22,13 @@ export const getAlarmRules = () => request.get('/alarm/rules')
 export const saveAlarmRule = (data) => request.post('/alarm/rule/save', data)
 export const deleteAlarmRule = (id) => request.delete(`/alarm/rule/${id}`)
 
+// WorkOrder APIs
+export const getWorkOrderList = (params) => request.get('/workorder/list', { params })
+export const saveWorkOrder = (data) => request.post('/workorder/save', data)
+export const createWorkOrderFromAlarm = (data) => request.post('/workorder/create-from-alarm', data)
+export const changeWorkOrderStatus = (data) => request.post('/workorder/change-status', data)
+export const getWorkOrderLogs = (id) => request.get(`/workorder/logs/${id}`)
+
 // System User APIs
 export const getUserList = () => request.get('/user/list')
 export const saveUser = (data) => request.post('/user/save', data)
@@ -33,6 +40,11 @@ export const getRoleList = () => request.get('/role/list')
 export const getPermissionList = () => request.get('/role/permissions')
 export const saveRole = (data) => request.post('/role/save', data)
 export const assignRolePermissions = (data) => request.post('/role/assign-permissions', data)
+
+// System Permission APIs (权限管理)
+export const getPermissionPageList = (params) => request.get('/permission/list', { params })
+export const savePermission = (data) => request.post('/permission/save', data)
+export const deletePermission = (id) => request.delete(`/permission/${id}`)
 
 // Audit Log APIs
 export const getOperationLogs = (params) => request.get('/log/operation', { params })

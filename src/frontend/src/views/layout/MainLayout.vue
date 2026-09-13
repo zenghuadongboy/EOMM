@@ -15,38 +15,39 @@
         active-text-color="#3b82f6"
         router
       >
-        <el-menu-item index="/dashboard">
+        <el-menu-item index="/dashboard" v-if="hasPerm('dashboard:view')">
           <el-icon><DataAnalysis /></el-icon>
           <span>运维监控大屏</span>
         </el-menu-item>
 
-        <el-menu-item index="/assets">
+        <el-menu-item index="/assets" v-if="hasPerm('asset:view')">
           <el-icon><Cpu /></el-icon>
           <span>设备资产全生命周期</span>
         </el-menu-item>
 
-        <el-menu-item index="/workorders">
+        <el-menu-item index="/workorders" v-if="hasPerm('asset:view') || hasPerm('alarm:view')">
           <el-icon><Tickets /></el-icon>
           <span>运维工单全流程管理</span>
         </el-menu-item>
 
-        <el-sub-menu index="alarms">
+        <el-sub-menu index="alarms" v-if="hasPerm('alarm:view') || hasPerm('alarm:rule')">
           <template #title>
             <el-icon><Bell /></el-icon>
             <span>告警中心与策略</span>
           </template>
-          <el-menu-item index="/alarms">告警记录与闭环</el-menu-item>
-          <el-menu-item index="/alarms/rules">自动化告警规则</el-menu-item>
+          <el-menu-item index="/alarms" v-if="hasPerm('alarm:view')">告警记录与闭环</el-menu-item>
+          <el-menu-item index="/alarms/rules" v-if="hasPerm('alarm:rule')">自动化告警规则</el-menu-item>
         </el-sub-menu>
 
-        <el-sub-menu index="system">
+        <el-sub-menu index="system" v-if="hasPerm('system:user') || hasPerm('system:role') || hasPerm('system:permission') || hasPerm('system:log')">
           <template #title>
             <el-icon><Setting /></el-icon>
             <span>系统与安全审计</span>
           </template>
-          <el-menu-item index="/system/users">用户账号管理</el-menu-item>
-          <el-menu-item index="/system/roles">RBAC 角色权限</el-menu-item>
-          <el-menu-item index="/system/logs">全量审计日志</el-menu-item>
+          <el-menu-item index="/system/users" v-if="hasPerm('system:user')">用户账号管理</el-menu-item>
+          <el-menu-item index="/system/roles" v-if="hasPerm('system:role')">RBAC 角色权限</el-menu-item>
+          <el-menu-item index="/system/permissions" v-if="hasPerm('system:permission')">权限管理</el-menu-item>
+          <el-menu-item index="/system/logs" v-if="hasPerm('system:log')">全量审计日志</el-menu-item>
         </el-sub-menu>
       </el-menu>
 
@@ -121,7 +122,7 @@
     </el-drawer>
 
     <!-- Password Change Dialog -->
-    <el-dialog v-model="showPasswordDialog" title="修改登录密码" width="420px">
+    <el-dialog v-model="showPasswordDialog" title="修改登录密码" width="420px" append-to-body align-center>
       <el-form :model="pwdForm" label-width="90px">
         <el-form-item label="原密码">
           <el-input v-model="pwdForm.oldPassword" type="password" show-password />
@@ -149,6 +150,7 @@ import { ElMessage } from 'element-plus'
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
+const hasPerm = (code) => userStore.hasPermission(code)
 
 const activeMenu = computed(() => route.path)
 const currentTitle = computed(() => route.meta.title || '控制台')

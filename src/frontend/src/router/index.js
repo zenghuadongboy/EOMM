@@ -1,6 +1,7 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 import MainLayout from '../views/layout/MainLayout.vue'
 import { useUserStore } from '../store/user'
+import { ElMessageBox } from 'element-plus'
 
 const routes = [
   {
@@ -18,25 +19,25 @@ const routes = [
         path: 'dashboard',
         name: 'Dashboard',
         component: () => import('../views/dashboard/Index.vue'),
-        meta: { title: '运维监控大屏看板', requiresAuth: true }
+        meta: { title: '运维监控大屏看板', requiresAuth: true, permCode: 'dashboard:view' }
       },
       {
         path: 'assets',
         name: 'Assets',
         component: () => import('../views/assets/List.vue'),
-        meta: { title: 'IT设备资产全生命周期管理', requiresAuth: true }
+        meta: { title: 'IT设备资产全生命周期管理', requiresAuth: true, permCode: 'asset:view' }
       },
       {
         path: 'alarms',
         name: 'Alarms',
         component: () => import('../views/alarms/List.vue'),
-        meta: { title: '告警中心与处置闭环', requiresAuth: true }
+        meta: { title: '告警中心与处置闭环', requiresAuth: true, permCode: 'alarm:view' }
       },
       {
         path: 'alarms/rules',
         name: 'AlarmRules',
         component: () => import('../views/alarms/Rules.vue'),
-        meta: { title: '自动化告警策略配置', requiresAuth: true }
+        meta: { title: '自动化告警策略配置', requiresAuth: true, permCode: 'alarm:rule' }
       },
       {
         path: 'workorders',
@@ -48,19 +49,25 @@ const routes = [
         path: 'system/users',
         name: 'SystemUsers',
         component: () => import('../views/system/Users.vue'),
-        meta: { title: '系统账号与用户管理', requiresAuth: true }
+        meta: { title: '系统账号与用户管理', requiresAuth: true, permCode: 'system:user' }
       },
       {
         path: 'system/roles',
         name: 'SystemRoles',
         component: () => import('../views/system/Roles.vue'),
-        meta: { title: 'RBAC角色与权限管理', requiresAuth: true }
+        meta: { title: 'RBAC角色与权限管理', requiresAuth: true, permCode: 'system:role' }
+      },
+      {
+        path: 'system/permissions',
+        name: 'SystemPermissions',
+        component: () => import('../views/system/Permissions.vue'),
+        meta: { title: '权限管理', requiresAuth: true, permCode: 'system:permission' }
       },
       {
         path: 'system/logs',
         name: 'SystemLogs',
         component: () => import('../views/system/Logs.vue'),
-        meta: { title: '全量操作审计与系统日志', requiresAuth: true }
+        meta: { title: '全量操作审计与系统日志', requiresAuth: true, permCode: 'system:log' }
       }
     ]
   }
@@ -79,9 +86,29 @@ router.beforeEach((to, from, next) => {
   const userStore = useUserStore()
   if (to.meta.requiresAuth && !userStore.isLoggedIn) {
     next('/login')
-  } else {
-    next()
+    return
   }
+
+  if (to.meta.permCode && !userStore.hasPermission(to.meta.permCode)) {
+    ElMessageBox.alert(
+      `当前账号无权访问模块 [${to.meta.title || '受限模块'}]，请联系系统管理员分配权限。`,
+      '访问权限受限',
+      {
+        confirmButtonText: '确定返回',
+        type: 'warning',
+        callback: () => {
+          if (from.path && from.path !== to.path && from.path !== '/') {
+            next(false)
+          } else {
+            next('/dashboard')
+          }
+        }
+      }
+    )
+    return
+  }
+
+  next()
 })
 
 export default router

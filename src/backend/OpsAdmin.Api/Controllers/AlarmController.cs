@@ -30,6 +30,7 @@ namespace OpsAdmin.Api.Controllers
         {
             var q = _context.AlarmRecords
                 .Include(r => r.Asset)
+                .Include(r => r.Rule)
                 .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(status))
@@ -50,7 +51,7 @@ namespace OpsAdmin.Api.Controllers
                     r.Id,
                     r.AlarmNo,
                     r.AssetId,
-                    AssetName = r.Asset != null ? r.Asset.Name : "未知设备",
+                    AssetName = r.Asset != null ? r.Asset.AssetName : "未知设备",
                     IpAddress = r.Asset != null ? r.Asset.IpAddress : "",
                     r.Content,
                     r.Severity,
@@ -104,12 +105,16 @@ namespace OpsAdmin.Api.Controllers
             return Ok(ApiResponse<string>.Ok("告警处理记录更新成功"));
         }
 
-        // --- 2. Alarm Rules ---
+        // --- 2. Alarm Rules (alarm_roles) ---
 
         [HttpGet("rules")]
         public async Task<ActionResult<ApiResponse<List<AlarmRule>>>> GetRules()
         {
-            var rules = await _context.AlarmRules.OrderByDescending(r => r.Id).ToListAsync();
+            var rules = await _context.AlarmRules
+                .Include(r => r.AssetType)
+                .OrderByDescending(r => r.Id)
+                .ToListAsync();
+
             return Ok(ApiResponse<List<AlarmRule>>.Ok(rules));
         }
 
@@ -118,8 +123,15 @@ namespace OpsAdmin.Api.Controllers
         {
             var username = User.Identity?.Name ?? "system";
 
+            if (rule.AssetTypeId <= 0)
+            {
+                var defaultType = await _context.AssetTypes.FirstOrDefaultAsync();
+                rule.AssetTypeId = defaultType?.Id ?? 1;
+            }
+
             if (rule.Id == 0)
             {
+                rule.CreateTime = DateTime.Now;
                 _context.AlarmRules.Add(rule);
             }
             else
@@ -127,13 +139,12 @@ namespace OpsAdmin.Api.Controllers
                 var existing = await _context.AlarmRules.FindAsync(rule.Id);
                 if (existing == null) return Ok(ApiResponse<AlarmRule>.Fail("规则不存在"));
 
-                existing.Name = rule.Name;
-                existing.MetricType = rule.MetricType;
-                existing.Operator = rule.Operator;
+                existing.RuleName = rule.RuleName;
+                existing.AssetTypeId = rule.AssetTypeId;
+                existing.Metric = rule.Metric;
                 existing.Threshold = rule.Threshold;
                 existing.Severity = rule.Severity;
-                existing.IntervalSeconds = rule.IntervalSeconds;
-                existing.IsEnabled = rule.IsEnabled;
+                existing.Status = rule.Status;
                 existing.Description = rule.Description;
             }
 
@@ -143,9 +154,9 @@ namespace OpsAdmin.Api.Controllers
                 Module = "告警策略",
                 Action = "保存规则",
                 IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1",
-                RequestParam = $"{{ name: '{rule.Name}' }}",
+                RequestParam = $"{{ name: '{rule.RuleName}' }}",
                 Success = true,
-                Description = $"修改或新增告警规则 [{rule.Name}]",
+                Description = $"修改或新增告警规则 [{rule.RuleName}]",
                 CreatedAt = DateTime.Now
             });
 

@@ -5,7 +5,6 @@ using OpsAdmin.Api.Data;
 using OpsAdmin.Api.DTOs;
 using OpsAdmin.Api.Entities;
 using OpsAdmin.Api.Services;
-using System.Security.Claims;
 
 namespace OpsAdmin.Api.Controllers
 {
@@ -32,12 +31,12 @@ namespace OpsAdmin.Api.Controllers
 
             var hash = DbInitializer.HashPassword(request.Password);
             var user = await _context.Users
-                .Include(u => u.Role)
-                .FirstOrDefaultAsync(u => u.Username == request.Username && u.PasswordHash == hash);
+                .Include(u => u.UserRoles)
+                .ThenInclude(ur => ur.Role)
+                .FirstOrDefaultAsync(u => u.UserName == request.Username && u.PasswordHash == hash);
 
             if (user == null)
             {
-                // Record Audit Log
                 _context.OperationLogs.Add(new OperationLog
                 {
                     Username = request.Username,
@@ -54,37 +53,43 @@ namespace OpsAdmin.Api.Controllers
                 return Ok(ApiResponse<LoginResponse>.Fail("用户名或密码不正确"));
             }
 
-            if (!user.IsEnabled)
+            if (user.Status != "Enable")
             {
                 return Ok(ApiResponse<LoginResponse>.Fail("账号已被禁用，请联系系统管理员"));
             }
 
-            user.LastLoginAt = DateTime.Now;
+            var userRole = user.UserRoles.FirstOrDefault()?.Role;
+            var roleId = userRole?.Id ?? 0;
+            var roleCode = userRole?.RoleCode ?? "Guest";
+            var roleName = userRole?.RoleName ?? "未指派角色";
 
-            // Fetch Permissions
-            var permissionIds = await _context.RolePermissions
-                .Where(rp => rp.RoleId == user.RoleId)
-                .Select(rp => rp.PermissionId)
-                .ToListAsync();
+            List<string> permissions;
+            if (roleCode == "Admin")
+            {
+                permissions = await _context.Permissions.Select(p => p.PermissionCode).ToListAsync();
+            }
+            else
+            {
+                var permissionIds = await _context.RolePermissions
+                    .Where(rp => rp.RoleId == roleId)
+                    .Select(rp => rp.PermissionId)
+                    .ToListAsync();
 
-            var permissions = await _context.Permissions
-                .Where(p => permissionIds.Contains(p.Id))
-                .Select(p => p.Code)
-                .ToListAsync();
-
-            var roleCode = user.Role?.Code ?? "Guest";
-            var roleName = user.Role?.Name ?? "未指派角色";
+                permissions = await _context.Permissions
+                    .Where(p => permissionIds.Contains(p.Id))
+                    .Select(p => p.PermissionCode)
+                    .ToListAsync();
+            }
 
             var token = _jwtService.GenerateToken(user, roleCode, permissions);
 
-            // Audit log
             _context.OperationLogs.Add(new OperationLog
             {
-                Username = user.Username,
+                Username = user.UserName,
                 Module = "身份认证",
                 Action = "用户登录",
                 IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1",
-                RequestParam = $"{{ username: '{user.Username}' }}",
+                RequestParam = $"{{ username: '{user.UserName}' }}",
                 Success = true,
                 Description = $"用户 [{user.RealName}] 成功登录",
                 CreatedAt = DateTime.Now
@@ -97,7 +102,7 @@ namespace OpsAdmin.Api.Controllers
                 Token = token,
                 RefreshToken = Guid.NewGuid().ToString("N"),
                 UserId = user.Id,
-                Username = user.Username,
+                Username = user.UserName,
                 RealName = user.RealName,
                 RoleCode = roleCode,
                 RoleName = roleName,
@@ -113,31 +118,42 @@ namespace OpsAdmin.Api.Controllers
         {
             var username = User.Identity?.Name;
             var user = await _context.Users
-                .Include(u => u.Role)
-                .FirstOrDefaultAsync(u => u.Username == username);
+                .Include(u => u.UserRoles)
+                .ThenInclude(ur => ur.Role)
+                .FirstOrDefaultAsync(u => u.UserName == username);
 
             if (user == null) return Ok(ApiResponse<object>.Fail("用户不存在"));
 
-            var permissionIds = await _context.RolePermissions
-                .Where(rp => rp.RoleId == user.RoleId)
-                .Select(rp => rp.PermissionId)
-                .ToListAsync();
+            var userRole = user.UserRoles.FirstOrDefault()?.Role;
+            var roleId = userRole?.Id ?? 0;
 
-            var permissions = await _context.Permissions
-                .Where(p => permissionIds.Contains(p.Id))
-                .Select(p => p.Code)
-                .ToListAsync();
+            List<string> permissions;
+            if (userRole?.RoleCode == "Admin")
+            {
+                permissions = await _context.Permissions.Select(p => p.PermissionCode).ToListAsync();
+            }
+            else
+            {
+                var permissionIds = await _context.RolePermissions
+                    .Where(rp => rp.RoleId == roleId)
+                    .Select(rp => rp.PermissionId)
+                    .ToListAsync();
+
+                permissions = await _context.Permissions
+                    .Where(p => permissionIds.Contains(p.Id))
+                    .Select(p => p.PermissionCode)
+                    .ToListAsync();
+            }
 
             return Ok(ApiResponse<object>.Ok(new
             {
                 user.Id,
-                user.Username,
+                Username = user.UserName,
                 user.RealName,
                 user.Email,
-                user.Phone,
-                user.Department,
-                RoleCode = user.Role?.Code,
-                RoleName = user.Role?.Name,
+                user.Status,
+                RoleCode = userRole?.RoleCode,
+                RoleName = userRole?.RoleName,
                 Permissions = permissions
             }));
         }
@@ -147,7 +163,7 @@ namespace OpsAdmin.Api.Controllers
         public async Task<ActionResult<ApiResponse<string>>> ChangePassword([FromBody] ModifyPasswordRequest request)
         {
             var username = User.Identity?.Name;
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.UserName == username);
             if (user == null) return Ok(ApiResponse<string>.Fail("未找到用户"));
 
             var oldHash = DbInitializer.HashPassword(request.OldPassword);
@@ -160,7 +176,7 @@ namespace OpsAdmin.Api.Controllers
 
             _context.OperationLogs.Add(new OperationLog
             {
-                Username = user.Username,
+                Username = user.UserName,
                 Module = "身份认证",
                 Action = "修改密码",
                 IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1",

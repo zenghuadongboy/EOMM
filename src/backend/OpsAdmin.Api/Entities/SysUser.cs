@@ -12,33 +12,26 @@ namespace OpsAdmin.Api.Entities
 
         [Required]
         [MaxLength(50)]
-        public string Username { get; set; } = string.Empty;
+        public string UserName { get; set; } = string.Empty;
 
         [Required]
         [MaxLength(200)]
         public string PasswordHash { get; set; } = string.Empty;
 
-        [MaxLength(100)]
+        [MaxLength(50)]
         public string RealName { get; set; } = string.Empty;
 
         [MaxLength(100)]
         public string Email { get; set; } = string.Empty;
 
         [MaxLength(20)]
-        public string Phone { get; set; } = string.Empty;
+        public string Status { get; set; } = "Enable";
 
-        [MaxLength(50)]
-        public string Department { get; set; } = string.Empty;
+        public DateTime CreateTime { get; set; } = DateTime.Now;
 
-        public int RoleId { get; set; }
+        [NotMapped]
+        public string Username { get => UserName; set => UserName = value; }
 
-        [ForeignKey(nameof(RoleId))]
-        public SysRole? Role { get; set; }
-
-        public bool IsEnabled { get; set; } = true;
-
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
-
-        public DateTime? LastLoginAt { get; set; }
+        public ICollection<SysUserRole> UserRoles { get; set; } = new List<SysUserRole>();
     }
 }

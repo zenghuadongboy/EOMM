@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace OpsAdmin.Api.Entities
 {
-    [Table("alarm_rules")]
+    [Table("alarm_roles")]
     public class AlarmRule
     {
         [Key]
@@ -12,29 +12,36 @@ namespace OpsAdmin.Api.Entities
 
         [Required]
         [MaxLength(100)]
-        public string Name { get; set; } = string.Empty;
+        public string RuleName { get; set; } = string.Empty;
 
-        // Offline, CpuUsage, MemoryUsage, DiskUsage
+        public int AssetTypeId { get; set; }
+
+        [ForeignKey(nameof(AssetTypeId))]
+        public AssetType? AssetType { get; set; }
+
         [Required]
         [MaxLength(50)]
-        public string MetricType { get; set; } = "CpuUsage";
+        public string Metric { get; set; } = "CpuUsage";
 
-        // >, >=, ==, <, <=
-        [MaxLength(10)]
-        public string Operator { get; set; } = ">";
-
-        public double Threshold { get; set; } = 80.0;
+        [Required]
+        [MaxLength(50)]
+        public string Threshold { get; set; } = "80";
 
         // Info, Warning, Critical
         [MaxLength(20)]
         public string Severity { get; set; } = "Warning";
 
-        public int IntervalSeconds { get; set; } = 60;
-
-        public bool IsEnabled { get; set; } = true;
+        // Enable, Disable
+        [MaxLength(20)]
+        public string Status { get; set; } = "Enable";
 
         [MaxLength(200)]
         public string Description { get; set; } = string.Empty;
+
+        public DateTime CreateTime { get; set; } = DateTime.Now;
+
+        [NotMapped]
+        public string Name { get => RuleName; set => RuleName = value; }
     }
 
     [Table("alarm_records")]
@@ -54,6 +61,9 @@ namespace OpsAdmin.Api.Entities
         public Asset? Asset { get; set; }
 
         public int RuleId { get; set; }
+
+        [ForeignKey(nameof(RuleId))]
+        public AlarmRule? Rule { get; set; }
 
         [MaxLength(200)]
         public string Content { get; set; } = string.Empty;

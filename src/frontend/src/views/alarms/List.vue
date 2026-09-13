@@ -93,7 +93,7 @@
     </div>
 
     <!-- Process Alarm Dialog -->
-    <el-dialog v-model="showProcessModal" title="告警工单处置与闭环登记" width="500px">
+    <el-dialog v-model="showProcessModal" title="告警工单处置与闭环登记" width="500px" append-to-body align-center>
       <div class="alarm-detail-box">
         <div class="detail-row"><span class="lbl">告警编号:</span> {{ currentAlarm.alarmNo }}</div>
         <div class="detail-row"><span class="lbl">故障资产:</span> {{ currentAlarm.assetName }}</div>

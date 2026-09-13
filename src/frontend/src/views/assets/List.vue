@@ -130,7 +130,7 @@
     </div>
 
     <!-- Edit/Add Dialog -->
-    <el-dialog v-model="showEditModal" :title="form.id === 0 ? '新增资产设备' : '编辑资产设备'" width="560px">
+    <el-dialog v-model="showEditModal" :title="form.id === 0 ? '新增资产设备' : '编辑资产设备'" width="560px" append-to-body align-center>
       <el-form :model="form" label-width="100px">
         <el-form-item label="资产编号">
           <el-input v-model="form.assetNo" :disabled="form.id !== 0" placeholder="例如: AST-SRV-008" />
@@ -178,7 +178,7 @@
     </el-dialog>
 
     <!-- Simulate Stress Dialog -->
-    <el-dialog v-model="showSimulateModal" title="设备故障与资源压力测试模拟器" width="480px">
+    <el-dialog v-model="showSimulateModal" title="设备故障与资源压力测试模拟器" width="480px" append-to-body align-center>
       <div class="sim-intro">
         该工具允许运维工程师手动设置资产的状态与 CPU 负载，测试后台 <code>BackgroundService</code> 告警引擎的判定与实时触发能力。
       </div>

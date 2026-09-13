@@ -98,7 +98,7 @@
     </el-card>
 
     <!-- 新建/编辑对话框 -->
-    <el-dialog v-model="createModalVisible" title="新建运维处置工单" width="560px">
+    <el-dialog v-model="createModalVisible" title="新建运维处置工单" width="560px" append-to-body align-center>
       <el-form :model="form" label-width="110px">
         <el-form-item label="关联设备" required>
           <el-select v-model="form.assetId" placeholder="选择关联的IT设备" style="width: 100%">
@@ -129,7 +129,7 @@
     </el-dialog>
 
     <!-- 状态变更对话框 -->
-    <el-dialog v-model="statusModalVisible" title="工单状态流转变更" width="500px">
+    <el-dialog v-model="statusModalVisible" title="工单状态流转变更" width="500px" append-to-body align-center>
       <el-form :model="statusForm" label-width="110px">
         <el-form-item label="当前工单">
           <span style="font-weight: bold">{{ currentOrder?.workOrderNo }}</span>
@@ -179,7 +179,13 @@
 import { ref, reactive, onMounted } from 'vue'
 import { Plus } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
-import axios from 'axios'
+import {
+  getWorkOrderList,
+  saveWorkOrder,
+  changeWorkOrderStatus,
+  getWorkOrderLogs,
+  getAssetList
+} from '../../api'
 
 const loading = ref(false)
 const submitLoading = ref(false)
@@ -220,13 +226,13 @@ const logList = ref([])
 const fetchList = async () => {
   loading.value = true
   try {
-    const res = await axios.get('/api/workorder/list', { params: queryParams })
-    if (res.data.code === 200) {
-      tableData.value = res.data.data.items
-      total.value = res.data.data.total
+    const res = await getWorkOrderList(queryParams)
+    if (res && res.data) {
+      tableData.value = res.data.items || []
+      total.value = res.data.total || 0
     }
   } catch (err) {
-    ElMessage.error('获取工单列表失败')
+    // Request error handled in request.js interceptor
   } finally {
     loading.value = false
   }
@@ -242,9 +248,9 @@ const resetQuery = () => {
 
 const fetchAssets = async () => {
   try {
-    const res = await axios.get('/api/asset/list', { params: { page: 1, pageSize: 100 } })
-    if (res.data.code === 200) {
-      assetOptions.value = res.data.data.items
+    const res = await getAssetList({ page: 1, pageSize: 100 })
+    if (res && res.data) {
+      assetOptions.value = res.data.items || []
     }
   } catch (e) {}
 }
@@ -264,14 +270,13 @@ const handleSave = async () => {
 
   submitLoading.value = true
   try {
-    const res = await axios.post('/api/workorder/save', form)
-    if (res.data.code === 200) {
+    const res = await saveWorkOrder(form)
+    if (res && (res.code === 200 || res.success)) {
       ElMessage.success('工单派发成功')
       createModalVisible.value = false
       fetchList()
     }
   } catch (err) {
-    ElMessage.error('工单保存失败')
   } finally {
     submitLoading.value = false
   }
@@ -289,14 +294,13 @@ const openStatusModal = (row) => {
 const handleStatusSubmit = async () => {
   submitLoading.value = true
   try {
-    const res = await axios.post('/api/workorder/change-status', statusForm)
-    if (res.data.code === 200) {
+    const res = await changeWorkOrderStatus(statusForm)
+    if (res && (res.code === 200 || res.success)) {
       ElMessage.success('状态更新成功')
       statusModalVisible.value = false
       fetchList()
     }
   } catch (err) {
-    ElMessage.error('状态流转失败')
   } finally {
     submitLoading.value = false
   }
@@ -304,14 +308,12 @@ const handleStatusSubmit = async () => {
 
 const viewLogs = async (row) => {
   try {
-    const res = await axios.get(`/api/workorder/logs/${row.id}`)
-    if (res.data.code === 200) {
-      logList.value = res.data.data
+    const res = await getWorkOrderLogs(row.id)
+    if (res && res.data) {
+      logList.value = res.data
       logDrawerVisible.value = true
     }
-  } catch (e) {
-    ElMessage.error('获取履历日志失败')
-  }
+  } catch (e) {}
 }
 
 const getPriorityTag = (p) => {

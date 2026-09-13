@@ -64,7 +64,7 @@
     </el-table>
 
     <!-- Edit/Add Rule Dialog -->
-    <el-dialog v-model="showModal" :title="form.id === 0 ? '创建告警策略规则' : '编辑告警策略规则'" width="520px">
+    <el-dialog v-model="showModal" :title="form.id === 0 ? '创建告警策略规则' : '编辑告警策略规则'" width="520px" append-to-body align-center>
       <el-form :model="form" label-width="110px">
         <el-form-item label="策略名称">
           <el-input v-model="form.name" placeholder="例如: 内存占用过高警报" />

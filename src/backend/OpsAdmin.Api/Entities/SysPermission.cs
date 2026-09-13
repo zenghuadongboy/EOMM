@@ -11,23 +11,28 @@ namespace OpsAdmin.Api.Entities
         public int Id { get; set; }
 
         [Required]
-        [MaxLength(100)]
-        public string Code { get; set; } = string.Empty;
+        [MaxLength(50)]
+        public string PermissionCode { get; set; } = string.Empty;
 
         [Required]
         [MaxLength(100)]
-        public string Name { get; set; } = string.Empty;
-
-        // Menu, Button, Api
-        [MaxLength(20)]
-        public string Type { get; set; } = "Menu";
+        public string PermissionName { get; set; } = string.Empty;
 
         [MaxLength(200)]
         public string Path { get; set; } = string.Empty;
 
-        public int ParentId { get; set; } = 0;
+        [MaxLength(10)]
+        public string Method { get; set; } = "GET";
 
-        public int SortOrder { get; set; } = 0;
+        [MaxLength(200)]
+        public string Description { get; set; } = string.Empty;
+
+        public DateTime CreateTime { get; set; } = DateTime.Now;
+
+        [NotMapped]
+        public string Code { get => PermissionCode; set => PermissionCode = value; }
+        [NotMapped]
+        public string Name { get => PermissionName; set => PermissionName = value; }
     }
 
     [Table("sys_role_permissions")]

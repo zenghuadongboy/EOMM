@@ -174,20 +174,44 @@ body {
   box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
 }
 
-.el-card {
-  background-color: var(--bg-card) !important;
-  border-color: var(--border-color) !important;
-  color: var(--text-main) !important;
-}
-
 .el-dialog {
   background-color: #1e293b !important;
   border: 1px solid #334155 !important;
   border-radius: 12px !important;
+  max-height: 85vh !important;
+  margin-top: 6vh !important;
+  margin-bottom: 6vh !important;
+  display: flex !important;
+  flex-direction: column !important;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5) !important;
+}
+
+.el-dialog__header {
+  padding: 16px 20px !important;
+  margin-right: 0 !important;
+  border-bottom: 1px solid #334155 !important;
+  flex-shrink: 0 !important;
 }
 
 .el-dialog__title {
   color: #f8fafc !important;
+  font-weight: 600 !important;
+}
+
+.el-dialog__body {
+  padding: 20px !important;
+  overflow-y: auto !important;
+  flex: 1 !important;
+  max-height: calc(85vh - 120px) !important;
+}
+
+.el-dialog__footer {
+  padding: 12px 20px !important;
+  border-top: 1px solid #334155 !important;
+  flex-shrink: 0 !important;
+  background: #162032 !important;
+  border-bottom-left-radius: 12px !important;
+  border-bottom-right-radius: 12px !important;
 }
 
 .el-form-item__label {

@@ -9,8 +9,10 @@ namespace OpsAdmin.Api.Data
 
         public DbSet<SysUser> Users { get; set; }
         public DbSet<SysRole> Roles { get; set; }
+        public DbSet<SysUserRole> UserRoles { get; set; }
         public DbSet<SysPermission> Permissions { get; set; }
         public DbSet<SysRolePermission> RolePermissions { get; set; }
+        public DbSet<AssetType> AssetTypes { get; set; }
         public DbSet<Asset> Assets { get; set; }
         public DbSet<AlarmRule> AlarmRules { get; set; }
         public DbSet<AlarmRecord> AlarmRecords { get; set; }
@@ -23,8 +25,20 @@ namespace OpsAdmin.Api.Data
         {
             base.OnModelCreating(modelBuilder);
 
+            // SysUserRole 复合主键配置
+            modelBuilder.Entity<SysUserRole>()
+                .HasKey(ur => new { ur.UserId, ur.RoleId });
+
             modelBuilder.Entity<SysUser>()
-                .HasIndex(u => u.Username)
+                .HasIndex(u => u.UserName)
+                .IsUnique();
+
+            modelBuilder.Entity<SysRole>()
+                .HasIndex(r => r.RoleCode)
+                .IsUnique();
+
+            modelBuilder.Entity<AssetType>()
+                .HasIndex(at => at.TypeCode)
                 .IsUnique();
 
             modelBuilder.Entity<Asset>()

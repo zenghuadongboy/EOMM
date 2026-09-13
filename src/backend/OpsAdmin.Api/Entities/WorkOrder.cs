@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace OpsAdmin.Api.Entities
 {
-    [Table("ops_work_orders")]
+    [Table("work_orders")]
     public class WorkOrder
     {
         [Key]
@@ -14,47 +14,50 @@ namespace OpsAdmin.Api.Entities
         [MaxLength(50)]
         public string WorkOrderNo { get; set; } = string.Empty;
 
-        [Required]
-        [MaxLength(150)]
-        public string Title { get; set; } = string.Empty;
-
-        public int AssetId { get; set; }
-
-        [ForeignKey(nameof(AssetId))]
-        public Asset? Asset { get; set; }
-
-        public int? AlarmRecordId { get; set; }
-
         // Manual, AlarmTriggered, Inspection
-        [MaxLength(30)]
+        [MaxLength(20)]
         public string Source { get; set; } = "Manual";
 
         // Low, Medium, High, Critical
         [MaxLength(20)]
         public string Priority { get; set; } = "Medium";
 
-        // Pending, Processing, Completed, Closed
-        [MaxLength(20)]
-        public string Status { get; set; } = "Pending";
+        public int AssetId { get; set; }
 
-        [MaxLength(50)]
-        public string Creator { get; set; } = string.Empty;
+        [ForeignKey(nameof(AssetId))]
+        public Asset? Asset { get; set; }
+
+        public int AlarmId { get; set; }
+
+        [ForeignKey(nameof(AlarmId))]
+        public AlarmRecord? AlarmRecord { get; set; }
 
         [MaxLength(50)]
         public string Handler { get; set; } = string.Empty;
 
+        // Pending, Processing, Completed, Closed
+        [MaxLength(20)]
+        public string Status { get; set; } = "Pending";
+
+        [Required]
+        [MaxLength(200)]
+        public string Title { get; set; } = string.Empty;
+
         [MaxLength(500)]
         public string Description { get; set; } = string.Empty;
 
-        [MaxLength(1000)]
-        public string ResolutionNotes { get; set; } = string.Empty;
-
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public DateTime CreateTime { get; set; } = DateTime.Now;
 
         public DateTime? FinishedAt { get; set; }
+
+        [NotMapped]
+        public DateTime CreatedAt { get => CreateTime; set => CreateTime = value; }
+
+        [NotMapped]
+        public int? AlarmRecordId { get => AlarmId; set => AlarmId = value ?? 0; }
     }
 
-    [Table("ops_work_order_logs")]
+    [Table("work_order_logs")]
     public class WorkOrderLog
     {
         [Key]
@@ -62,6 +65,14 @@ namespace OpsAdmin.Api.Entities
         public int Id { get; set; }
 
         public int WorkOrderId { get; set; }
+
+        [ForeignKey(nameof(WorkOrderId))]
+        public WorkOrder? WorkOrder { get; set; }
+
+        public int OperatorId { get; set; }
+
+        [ForeignKey(nameof(OperatorId))]
+        public SysUser? Operator { get; set; }
 
         [MaxLength(50)]
         public string OperatorName { get; set; } = string.Empty;
@@ -75,6 +86,9 @@ namespace OpsAdmin.Api.Entities
         [MaxLength(500)]
         public string ActionNote { get; set; } = string.Empty;
 
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public DateTime CreateTime { get; set; } = DateTime.Now;
+
+        [NotMapped]
+        public DateTime CreatedAt { get => CreateTime; set => CreateTime = value; }
     }
 }

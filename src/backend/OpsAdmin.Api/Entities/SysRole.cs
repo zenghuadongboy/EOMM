@@ -12,15 +12,20 @@ namespace OpsAdmin.Api.Entities
 
         [Required]
         [MaxLength(50)]
-        public string Code { get; set; } = string.Empty;
+        public string RoleCode { get; set; } = string.Empty;
 
         [Required]
         [MaxLength(50)]
-        public string Name { get; set; } = string.Empty;
+        public string RoleName { get; set; } = string.Empty;
 
         [MaxLength(200)]
         public string Description { get; set; } = string.Empty;
 
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public DateTime CreateTime { get; set; } = DateTime.Now;
+
+        [NotMapped]
+        public string Code { get => RoleCode; set => RoleCode = value; }
+        [NotMapped]
+        public string Name { get => RoleName; set => RoleName = value; }
     }
 }

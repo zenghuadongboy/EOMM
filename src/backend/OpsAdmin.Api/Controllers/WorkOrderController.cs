@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using OpsAdmin.Api.Data;
+using OpsAdmin.Api.DTOs;
 using OpsAdmin.Api.Entities;
 
 namespace OpsAdmin.Api.Controllers
@@ -49,12 +50,12 @@ namespace OpsAdmin.Api.Controllers
             }
 
             var total = await query.CountAsync();
-            var items = await query.OrderByDescending(w => w.CreatedAt)
+            var items = await query.OrderByDescending(w => w.CreateTime)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
 
-            return Ok(new { code = 200, message = "success", data = new { total, items, page, pageSize } });
+            return Ok(ApiResponse<object>.Ok(new { total, items, page, pageSize }, "success"));
         }
 
         /// <summary>
@@ -65,56 +66,57 @@ namespace OpsAdmin.Api.Controllers
         {
             if (model.AssetId <= 0)
             {
-                return BadRequest(new { code = 400, message = "关联设备AssetId必须大于0" });
+                return BadRequest(ApiResponse<string>.Fail("关联设备AssetId必须大于0"));
             }
 
             var assetExists = await _db.Assets.AnyAsync(a => a.Id == model.AssetId);
             if (!assetExists)
             {
-                return BadRequest(new { code = 400, message = "指定的关联设备不存在" });
+                return BadRequest(ApiResponse<string>.Fail("指定的关联设备不存在"));
             }
+
+            var currentUsername = User.Identity?.Name ?? "admin";
+            var currentUser = await _db.Users.FirstOrDefaultAsync(u => u.UserName == currentUsername);
+            var operatorId = currentUser?.Id ?? 1;
 
             WorkOrder? order;
             if (model.Id <= 0)
             {
-                // 新建工单
                 order = new WorkOrder
                 {
                     WorkOrderNo = "WO" + DateTime.Now.ToString("yyyyMMddHHmmss") + Random.Shared.Next(100, 999),
                     Title = string.IsNullOrWhiteSpace(model.Title) ? "例行设备巡检与维护工单" : model.Title,
                     AssetId = model.AssetId,
-                    AlarmRecordId = model.AlarmRecordId,
+                    AlarmId = model.AlarmId > 0 ? model.AlarmId : (model.AlarmRecordId ?? 0),
                     Source = string.IsNullOrWhiteSpace(model.Source) ? "Manual" : model.Source,
                     Priority = string.IsNullOrWhiteSpace(model.Priority) ? "Medium" : model.Priority,
                     Status = "Pending",
-                    Creator = User.Identity?.Name ?? "admin",
-                    Handler = string.IsNullOrWhiteSpace(model.Handler) ? "admin" : model.Handler,
+                    Handler = string.IsNullOrWhiteSpace(model.Handler) ? currentUsername : model.Handler,
                     Description = model.Description ?? "",
-                    CreatedAt = DateTime.Now
+                    CreateTime = DateTime.Now
                 };
 
                 _db.WorkOrders.Add(order);
                 await _db.SaveChangesAsync();
 
-                // 记录初始日志
                 _db.WorkOrderLogs.Add(new WorkOrderLog
                 {
                     WorkOrderId = order.Id,
-                    OperatorName = User.Identity?.Name ?? "admin",
+                    OperatorId = operatorId,
+                    OperatorName = currentUser?.RealName ?? currentUsername,
                     PreviousStatus = "None",
                     NewStatus = "Pending",
                     ActionNote = $"工单创建成功，指派给负责人 [{order.Handler}]",
-                    CreatedAt = DateTime.Now
+                    CreateTime = DateTime.Now
                 });
                 await _db.SaveChangesAsync();
 
-                return Ok(new { code = 200, message = "工单创建成功", data = order });
+                return Ok(ApiResponse<WorkOrder>.Ok(order, "工单创建成功"));
             }
             else
             {
-                // 修改工单基本属性
                 order = await _db.WorkOrders.FindAsync(model.Id);
-                if (order == null) return NotFound(new { code = 444, message = "工单不存在" });
+                if (order == null) return NotFound(ApiResponse<string>.Fail("工单不存在"));
 
                 order.Title = model.Title;
                 order.Priority = model.Priority;
@@ -122,7 +124,7 @@ namespace OpsAdmin.Api.Controllers
                 order.Description = model.Description;
 
                 await _db.SaveChangesAsync();
-                return Ok(new { code = 200, message = "工单更新成功", data = order });
+                return Ok(ApiResponse<WorkOrder>.Ok(order, "工单更新成功"));
             }
         }
 
@@ -133,51 +135,51 @@ namespace OpsAdmin.Api.Controllers
         public async Task<IActionResult> CreateFromAlarm([FromBody] CreateFromAlarmDto dto)
         {
             var alarm = await _db.AlarmRecords.Include(a => a.Asset).FirstOrDefaultAsync(a => a.Id == dto.AlarmRecordId);
-            if (alarm == null) return NotFound(new { code = 444, message = "告警记录不存在" });
+            if (alarm == null) return NotFound(ApiResponse<string>.Fail("告警记录不存在"));
 
-            // 查重：避免重复针对同一告警创单
-            var existingWo = await _db.WorkOrders.FirstOrDefaultAsync(w => w.AlarmRecordId == alarm.Id && w.Status != "Closed");
+            var existingWo = await _db.WorkOrders.FirstOrDefaultAsync(w => w.AlarmId == alarm.Id && w.Status != "Closed");
             if (existingWo != null)
             {
-                return Ok(new { code = 200, message = "该告警已关联工单: " + existingWo.WorkOrderNo, data = existingWo });
+                return Ok(ApiResponse<WorkOrder>.Ok(existingWo, "该告警已关联工单: " + existingWo.WorkOrderNo));
             }
+
+            var currentUsername = User.Identity?.Name ?? "admin";
+            var currentUser = await _db.Users.FirstOrDefaultAsync(u => u.UserName == currentUsername);
+            var operatorId = currentUser?.Id ?? 1;
 
             var wo = new WorkOrder
             {
                 WorkOrderNo = "WO" + DateTime.Now.ToString("yyyyMMddHHmmss") + Random.Shared.Next(100, 999),
-                Title = $"[告警处置工单] {alarm.Asset?.Name} - {alarm.Severity}级别告警处置",
+                Title = $"[告警处置工单] {alarm.Asset?.AssetName} - {alarm.Severity}级别告警处置",
                 AssetId = alarm.AssetId,
-                AlarmRecordId = alarm.Id,
+                AlarmId = alarm.Id,
                 Source = "AlarmTriggered",
                 Priority = alarm.Severity == "Critical" ? "High" : "Medium",
                 Status = "Pending",
-                Creator = User.Identity?.Name ?? "admin",
-                Handler = string.IsNullOrWhiteSpace(dto.Handler) ? "admin" : dto.Handler,
+                Handler = string.IsNullOrWhiteSpace(dto.Handler) ? currentUsername : dto.Handler,
                 Description = $"关联告警内容: {alarm.Content}。告警时间: {alarm.TriggeredAt:yyyy-MM-dd HH:mm:ss}",
-                CreatedAt = DateTime.Now
+                CreateTime = DateTime.Now
             };
 
             _db.WorkOrders.Add(wo);
-
-            // 同时将告警记录状态变更为 Processing
             alarm.Status = "Processing";
             alarm.Handler = wo.Handler;
 
             await _db.SaveChangesAsync();
 
-            // 日志
             _db.WorkOrderLogs.Add(new WorkOrderLog
             {
                 WorkOrderId = wo.Id,
-                OperatorName = User.Identity?.Name ?? "admin",
+                OperatorId = operatorId,
+                OperatorName = currentUser?.RealName ?? currentUsername,
                 PreviousStatus = "None",
                 NewStatus = "Pending",
                 ActionNote = $"由告警记录[{alarm.AlarmNo}]自动联动派发工单",
-                CreatedAt = DateTime.Now
+                CreateTime = DateTime.Now
             });
 
             await _db.SaveChangesAsync();
-            return Ok(new { code = 200, message = "告警联动工单派发成功", data = wo });
+            return Ok(ApiResponse<WorkOrder>.Ok(wo, "告警联动工单派发成功"));
         }
 
         /// <summary>
@@ -187,23 +189,22 @@ namespace OpsAdmin.Api.Controllers
         public async Task<IActionResult> ChangeStatus([FromBody] ChangeStatusDto dto)
         {
             var order = await _db.WorkOrders.FindAsync(dto.WorkOrderId);
-            if (order == null) return NotFound(new { code = 444, message = "工单不存在" });
+            if (order == null) return NotFound(ApiResponse<string>.Fail("工单不存在"));
 
             var oldStatus = order.Status;
             order.Status = dto.NewStatus;
-            if (!string.IsNullOrWhiteSpace(dto.ResolutionNotes))
-            {
-                order.ResolutionNotes = dto.ResolutionNotes;
-            }
+
+            var currentUsername = User.Identity?.Name ?? "admin";
+            var currentUser = await _db.Users.FirstOrDefaultAsync(u => u.UserName == currentUsername);
+            var operatorId = currentUser?.Id ?? 1;
 
             if (dto.NewStatus == "Completed" || dto.NewStatus == "Closed")
             {
                 order.FinishedAt = DateTime.Now;
 
-                // 若关单或完成，联动将关联的告警记录更新为 Resolved
-                if (order.AlarmRecordId.HasValue)
+                if (order.AlarmId > 0)
                 {
-                    var alarm = await _db.AlarmRecords.FindAsync(order.AlarmRecordId.Value);
+                    var alarm = await _db.AlarmRecords.FindAsync(order.AlarmId);
                     if (alarm != null)
                     {
                         alarm.Status = "Resolved";
@@ -216,15 +217,16 @@ namespace OpsAdmin.Api.Controllers
             _db.WorkOrderLogs.Add(new WorkOrderLog
             {
                 WorkOrderId = order.Id,
-                OperatorName = User.Identity?.Name ?? "admin",
+                OperatorId = operatorId,
+                OperatorName = currentUser?.RealName ?? currentUsername,
                 PreviousStatus = oldStatus,
                 NewStatus = dto.NewStatus,
                 ActionNote = string.IsNullOrWhiteSpace(dto.Note) ? $"状态变更: {oldStatus} -> {dto.NewStatus}" : dto.Note,
-                CreatedAt = DateTime.Now
+                CreateTime = DateTime.Now
             });
 
             await _db.SaveChangesAsync();
-            return Ok(new { code = 200, message = $"工单状态更新为 {dto.NewStatus}", data = order });
+            return Ok(ApiResponse<WorkOrder>.Ok(order, $"工单状态更新为 {dto.NewStatus}"));
         }
 
         /// <summary>
@@ -235,10 +237,10 @@ namespace OpsAdmin.Api.Controllers
         {
             var logs = await _db.WorkOrderLogs
                 .Where(l => l.WorkOrderId == workOrderId)
-                .OrderBy(l => l.CreatedAt)
+                .OrderBy(l => l.CreateTime)
                 .ToListAsync();
 
-            return Ok(new { code = 200, message = "success", data = logs });
+            return Ok(ApiResponse<List<WorkOrderLog>>.Ok(logs, "success"));
         }
     }
 
