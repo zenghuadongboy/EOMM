@@ -118,15 +118,20 @@ body {
 .ops-act-btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 4px;
-  padding: 4px 9px;
+  padding: 3px 8px;
+  height: 24px;
+  line-height: 1;
   font-size: 0.75rem;
   font-weight: 500;
-  border-radius: 6px;
+  border-radius: 4px;
   cursor: pointer;
   transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
   outline: none;
   border: none;
+  white-space: nowrap;
+  box-sizing: border-box;
 }
 
 .ops-act-btn.edit-btn,

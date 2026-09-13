@@ -1,108 +1,134 @@
 <template>
-  <div class="workorders-container">
-    <!-- 头部卡片查询区 -->
-    <el-card class="search-card" shadow="never">
-      <div class="search-form">
+  <div class="workorders-page ops-glass-card">
+    <!-- Header Title & Action Bar -->
+    <div class="ops-card-title search-bar">
+      <div class="title-left">
+        <el-icon color="#3b82f6"><Tickets /></el-icon>
+        <span>运维工单全流程管理与闭环处置</span>
+        <el-tag type="info" size="small" class="ml-2">共有 {{ total }} 项运维工单</el-tag>
+      </div>
+      <div class="title-right">
         <el-input
           v-model="queryParams.keyword"
           placeholder="搜索工单编号 / 标题 / 负责人..."
+          prefix-icon="Search"
           clearable
-          style="width: 260px"
+          style="width: 240px; margin-right: 12px"
+          @clear="fetchList"
           @keyup.enter="fetchList"
         />
-        <el-select v-model="queryParams.status" placeholder="工单状态" clearable style="width: 140px; margin-left: 12px">
+        <el-select
+          v-model="queryParams.status"
+          placeholder="工单状态"
+          clearable
+          style="width: 140px; margin-right: 12px"
+          @change="fetchList"
+        >
           <el-option label="待处理 (Pending)" value="Pending" />
           <el-option label="处理中 (Processing)" value="Processing" />
           <el-option label="已完成 (Completed)" value="Completed" />
           <el-option label="已关闭 (Closed)" value="Closed" />
         </el-select>
 
-        <el-select v-model="queryParams.priority" placeholder="优先级" clearable style="width: 140px; margin-left: 12px">
+        <el-select
+          v-model="queryParams.priority"
+          placeholder="优先级"
+          clearable
+          style="width: 130px; margin-right: 12px"
+          @change="fetchList"
+        >
           <el-option label="一般 (Medium)" value="Medium" />
           <el-option label="紧急 (High)" value="High" />
           <el-option label="严重 (Critical)" value="Critical" />
         </el-select>
 
-        <el-button type="primary" style="margin-left: 16px" @click="fetchList">查询</el-button>
-        <el-button @click="resetQuery">重置</el-button>
-        <el-button type="success" style="margin-left: auto" @click="openCreateModal">
-          <el-icon><Plus /></el-icon> 创建运维工单
-        </el-button>
+        <el-button type="primary" icon="Plus" @click="openCreateModal">创建运维工单</el-button>
       </div>
-    </el-card>
+    </div>
 
-    <!-- 主表格卡片 -->
-    <el-card class="table-card" shadow="never" style="margin-top: 16px">
-      <el-table :data="tableData" v-loading="loading" border stripe style="width: 100%">
-        <el-table-column prop="workOrderNo" label="工单编号" width="180">
-          <template #default="{ row }">
-            <span class="mono-code">{{ row.workOrderNo }}</span>
-          </template>
-        </el-table-column>
-        <el-table-column prop="title" label="工单标题" min-width="220" show-overflow-tooltip />
-        <el-table-column label="关联资产" width="180">
-          <template #default="{ row }">
-            <span>{{ row.asset ? `${row.asset.name} (${row.asset.ipAddress})` : '未关联' }}</span>
-          </template>
-        </el-table-column>
-        <el-table-column label="来源类型" width="130">
-          <template #default="{ row }">
-            <el-tag :type="row.source === 'AlarmTriggered' ? 'danger' : 'info'" size="small">
-              {{ row.source === 'AlarmTriggered' ? '告警联动' : '手动派发' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="优先级" width="110">
-          <template #default="{ row }">
-            <el-tag :type="getPriorityTag(row.priority)" size="small">
-              {{ row.priority }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="当前状态" width="120">
-          <template #default="{ row }">
-            <el-tag :type="getStatusTag(row.status)" effect="dark" size="small">
-              {{ row.status }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="handler" label="负责人" width="110" />
-        <el-table-column prop="createdAt" label="派发时间" width="170">
-          <template #default="{ row }">
-            {{ formatDate(row.createdAt) }}
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="220" fixed="right">
-          <template #default="{ row }">
-            <el-button link type="primary" size="small" @click="openStatusModal(row)">
-              变更状态
-            </el-button>
-            <el-button link type="info" size="small" @click="viewLogs(row)">
-              流转履历
-            </el-button>
-          </template>
-        </el-table-column>
-      </el-table>
+    <!-- Main Table -->
+    <el-table :data="tableData" v-loading="loading" style="width: 100%; margin-top: 16px">
+      <el-table-column prop="workOrderNo" label="工单编号" width="180">
+        <template #default="{ row }">
+          <code class="mono-code">{{ row.workOrderNo }}</code>
+        </template>
+      </el-table-column>
+      <el-table-column prop="title" label="工单标题" min-width="200" show-overflow-tooltip>
+        <template #default="{ row }">
+          <span class="order-title-text">{{ row.title }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="关联故障资产" min-width="180">
+        <template #default="{ row }">
+          <div v-if="row.asset">
+            <span class="asset-name-text">{{ row.asset.assetName || row.asset.name }}</span>
+            <span class="asset-ip" v-if="row.asset.ipAddress">({{ row.asset.ipAddress }})</span>
+          </div>
+          <span class="no-asset" v-else>未关联资产</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="来源类型" width="120" align="center">
+        <template #default="{ row }">
+          <el-tag :type="row.source === 'AlarmTriggered' ? 'danger' : 'info'" size="small">
+            {{ row.source === 'AlarmTriggered' ? '告警联动' : '手动派发' }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column label="优先级" width="100" align="center">
+        <template #default="{ row }">
+          <el-tag :type="getPriorityTag(row.priority)" size="small">
+            {{ row.priority }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column label="当前状态" width="120" align="center">
+        <template #default="{ row }">
+          <el-tag :type="getStatusTag(row.status)" effect="dark" size="small">
+            {{ row.status }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column prop="handler" label="负责人" width="110" align="center">
+        <template #default="{ row }">
+          <span class="handler-name">{{ row.handler || '未指派' }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column prop="createdAt" label="派发时间" width="160">
+        <template #default="{ row }">
+          {{ formatDate(row.createdAt || row.createTime) }}
+        </template>
+      </el-table-column>
+      <el-table-column label="操作" width="180" align="center" fixed="right">
+        <template #default="{ row }">
+          <div class="action-btn-group">
+            <button class="ops-act-btn edit-btn" @click="openStatusModal(row)">
+              <el-icon><Edit /></el-icon>变更状态
+            </button>
+            <button class="ops-act-btn sim-btn" @click="viewLogs(row)">
+              <el-icon><Document /></el-icon>履历
+            </button>
+          </div>
+        </template>
+      </el-table-column>
+    </el-table>
 
-      <div class="pagination-wrapper" style="margin-top: 16px; text-align: right">
-        <el-pagination
-          v-model:current-page="queryParams.page"
-          v-model:page-size="queryParams.pageSize"
-          :total="total"
-          :page-sizes="[10, 20, 50]"
-          layout="total, sizes, prev, pager, next, jumper"
-          @size-change="fetchList"
-          @current-change="fetchList"
-        />
-      </div>
-    </el-card>
+    <!-- Pagination -->
+    <div class="pagination-box">
+      <el-pagination
+        v-model:current-page="queryParams.page"
+        v-model:page-size="queryParams.pageSize"
+        :total="total"
+        layout="total, prev, pager, next"
+        @current-change="fetchList"
+      />
+    </div>
 
-    <!-- 新建/编辑对话框 -->
+    <!-- Create WorkOrder Dialog -->
     <el-dialog v-model="createModalVisible" title="新建运维处置工单" width="560px" append-to-body align-center>
       <el-form :model="form" label-width="110px">
         <el-form-item label="关联设备" required>
           <el-select v-model="form.assetId" placeholder="选择关联的IT设备" style="width: 100%">
-            <el-option v-for="a in assetOptions" :key="a.id" :label="`${a.name} (${a.ipAddress})`" :value="a.id" />
+            <el-option v-for="a in assetOptions" :key="a.id" :label="`${a.assetName || a.name} (${a.ipAddress})`" :value="a.id" />
           </el-select>
         </el-form-item>
         <el-form-item label="工单标题" required>
@@ -128,11 +154,11 @@
       </template>
     </el-dialog>
 
-    <!-- 状态变更对话框 -->
+    <!-- Change Status Dialog -->
     <el-dialog v-model="statusModalVisible" title="工单状态流转变更" width="500px" append-to-body align-center>
       <el-form :model="statusForm" label-width="110px">
         <el-form-item label="当前工单">
-          <span style="font-weight: bold">{{ currentOrder?.workOrderNo }}</span>
+          <span style="font-weight: bold; color: #38bdf8">{{ currentOrder?.workOrderNo }}</span>
         </el-form-item>
         <el-form-item label="目标状态" required>
           <el-radio-group v-model="statusForm.newStatus">
@@ -154,20 +180,20 @@
       </template>
     </el-dialog>
 
-    <!-- 履历抽屉 -->
+    <!-- WorkOrder Log Timeline Drawer -->
     <el-drawer v-model="logDrawerVisible" title="工单全流程处置履历" size="480px">
       <el-timeline v-if="logList.length > 0">
         <el-timeline-item
           v-for="log in logList"
           :key="log.id"
-          :timestamp="formatDate(log.createdAt)"
+          :timestamp="formatDate(log.createdAt || log.createTime)"
           type="primary"
         >
-          <h4>操作人: {{ log.operatorName }}</h4>
-          <p style="color: #606266; margin-top: 4px">
+          <h4 style="color: #f1f5f9;">操作人: {{ log.operatorName || log.username }}</h4>
+          <p style="color: #94a3b8; margin-top: 4px">
             状态流转: <el-tag size="small">{{ log.previousStatus }}</el-tag> ➔ <el-tag size="small" type="success">{{ log.newStatus }}</el-tag>
           </p>
-          <p style="margin-top: 4px; font-size: 13px">{{ log.actionNote }}</p>
+          <p style="margin-top: 4px; font-size: 13px; color: #cbd5e1;">{{ log.actionNote }}</p>
         </el-timeline-item>
       </el-timeline>
       <el-empty v-else description="暂无历史流转记录" />
@@ -177,7 +203,7 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
-import { Plus } from '@element-plus/icons-vue'
+import { Plus, Search, Edit, Document, Tickets } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import {
   getWorkOrderList,
@@ -186,6 +212,7 @@ import {
   getWorkOrderLogs,
   getAssetList
 } from '../../api'
+import { formatDate } from '../../utils/date'
 
 const loading = ref(false)
 const submitLoading = ref(false)
@@ -229,10 +256,9 @@ const fetchList = async () => {
     const res = await getWorkOrderList(queryParams)
     if (res && res.data) {
       tableData.value = res.data.items || []
-      total.value = res.data.total || 0
+      total.value = res.data.totalCount || res.data.total || 0
     }
   } catch (err) {
-    // Request error handled in request.js interceptor
   } finally {
     loading.value = false
   }
@@ -248,7 +274,7 @@ const resetQuery = () => {
 
 const fetchAssets = async () => {
   try {
-    const res = await getAssetList({ page: 1, pageSize: 100 })
+    const res = await getAssetList({ pageIndex: 1, pageSize: 100 })
     if (res && res.data) {
       assetOptions.value = res.data.items || []
     }
@@ -331,11 +357,6 @@ const getStatusTag = (s) => {
   }
 }
 
-const formatDate = (str) => {
-  if (!str) return '-'
-  return new Date(str).toLocaleString('zh-CN', { hour12: false })
-}
-
 onMounted(() => {
   fetchList()
   fetchAssets()
@@ -343,17 +364,72 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.workorders-container {
-  padding: 16px;
+.workorders-page {
+  padding: 20px;
 }
-.search-form {
+
+.search-bar {
   display: flex;
+  justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
+  gap: 12px;
 }
-.mono-code {
-  font-family: 'Fira Code', Consolas, monospace;
+
+.title-left {
+  display: flex;
+  align-items: center;
+  font-size: 1.1rem;
   font-weight: 600;
-  color: #409eff;
+  color: #f8fafc;
+  gap: 8px;
+}
+
+.title-right {
+  display: flex;
+  align-items: center;
+}
+
+.mono-code {
+  font-family: monospace;
+  font-weight: 600;
+  color: #38bdf8;
+}
+
+.order-title-text {
+  font-weight: 600;
+  color: #f1f5f9;
+}
+
+.asset-name-text {
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
+.asset-ip {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  margin-left: 4px;
+}
+
+.no-asset {
+  font-size: 0.8rem;
+  color: #64748b;
+  font-style: italic;
+}
+
+.handler-name {
+  color: #e2e8f0;
+  font-weight: 500;
+}
+
+.pagination-box {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.ml-2 {
+  margin-left: 8px;
 }
 </style>

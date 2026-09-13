@@ -65,7 +65,7 @@
           {{ formatDate(scope.row.createTime || scope.row.createdAt) }}
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="140" align="center" fixed="right">
+      <el-table-column label="操作" width="130" align="center" fixed="right">
         <template #default="scope">
           <div class="action-btn-group">
             <button class="ops-act-btn edit-btn" @click="openEditDialog(scope.row)">

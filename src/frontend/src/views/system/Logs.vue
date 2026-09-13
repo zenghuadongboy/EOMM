@@ -24,7 +24,7 @@
         </div>
 
         <el-table :data="opLogs" v-loading="opLoading" style="width: 100%; margin-top: 16px;">
-          <el-table-column prop="createdAt" label="操作时间" width="160">
+          <el-table-column prop="createdAt" label="操作时间" width="180">
             <template #default="scope">
               {{ formatDate(scope.row.createdAt) }}
             </template>

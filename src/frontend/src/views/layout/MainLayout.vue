@@ -46,7 +46,7 @@
           </template>
           <el-menu-item index="/system/users" v-if="hasPerm('system:user')">用户账号管理</el-menu-item>
           <el-menu-item index="/system/roles" v-if="hasPerm('system:role')">RBAC 角色权限</el-menu-item>
-          <el-menu-item index="/system/permissions" v-if="hasPerm('system:permission')">权限管理</el-menu-item>
+          <el-menu-item index="/system/permissions" v-if="hasPerm('system:permission')">权限节点管理</el-menu-item>
           <el-menu-item index="/system/logs" v-if="hasPerm('system:log')">全量审计日志</el-menu-item>
         </el-sub-menu>
       </el-menu>

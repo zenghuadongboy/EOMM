@@ -61,7 +61,7 @@ const routes = [
         path: 'system/permissions',
         name: 'SystemPermissions',
         component: () => import('../views/system/Permissions.vue'),
-        meta: { title: '权限管理', requiresAuth: true, permCode: 'system:permission' }
+        meta: { title: '权限节点管理', requiresAuth: true, permCode: 'system:permission' }
       },
       {
         path: 'system/logs',
