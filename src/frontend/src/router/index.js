@@ -19,7 +19,7 @@ const routes = [
         path: 'dashboard',
         name: 'Dashboard',
         component: () => import('../views/dashboard/Index.vue'),
-        meta: { title: 'Dashboard首页', requiresAuth: true, permCode: 'dashboard:view' }
+        meta: { title: '首页Dashboard', requiresAuth: true, permCode: 'dashboard:view' }
       },
       {
         path: 'assets',
