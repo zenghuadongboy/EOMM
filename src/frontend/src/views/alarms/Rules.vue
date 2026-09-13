@@ -10,37 +10,43 @@
 
     <!-- Rules Table -->
     <el-table :data="tableData" v-loading="loading" style="width: 100%; margin-top: 16px;">
-      <el-table-column prop="name" label="规则策略名称" min-width="160">
+      <el-table-column prop="name" label="规则策略名称" min-width="170">
         <template #default="scope">
-          <div style="font-weight: 600; color: #f1f5f9;">{{ scope.row.name }}</div>
+          <div style="font-weight: 600; color: #f1f5f9;">{{ scope.row.name || scope.row.ruleName }}</div>
           <div class="sub-text">{{ scope.row.description }}</div>
         </template>
       </el-table-column>
-      <el-table-column prop="metricType" label="检测指标维度" width="140">
+      <el-table-column label="检测指标维度" width="160">
         <template #default="scope">
-          <el-tag type="info">{{ scope.row.metricType }}</el-tag>
+          <el-tag :type="getMetricTagType(scope.row.metric || scope.row.metricType)" effect="dark" round>
+            <el-icon style="margin-right: 4px; vertical-align: middle;"><Cpu v-if="(scope.row.metric || scope.row.metricType) === 'CpuUsage'" /><Monitor v-else-if="(scope.row.metric || scope.row.metricType) === 'MemoryUsage'" /><Files v-else-if="(scope.row.metric || scope.row.metricType) === 'DiskUsage'" /><Warning v-else /></el-icon>
+            {{ formatMetricName(scope.row.metric || scope.row.metricType) }}
+          </el-tag>
         </template>
       </el-table-column>
       <el-table-column label="判断逻辑与阈值" width="160">
         <template #default="scope">
-          <code>指标 {{ scope.row.operator }} {{ scope.row.threshold }}</code>
+          <code class="ops-code-badge">指标 {{ scope.row.operator || '>' }} {{ scope.row.threshold }}{{ (scope.row.metric || scope.row.metricType) === 'Offline' ? ' (断连)' : '%' }}</code>
         </template>
       </el-table-column>
       <el-table-column prop="severity" label="触发告警级别" width="120" align="center">
         <template #default="scope">
-          <el-tag :type="scope.row.severity === 'Critical' ? 'danger' : 'warning'" effect="dark">
-            {{ scope.row.severity }}
+          <el-tag :type="scope.row.severity === 'Critical' ? 'danger' : scope.row.severity === 'Warning' ? 'warning' : 'info'" effect="dark">
+            {{ scope.row.severity === 'Critical' ? '紧急 Critical' : scope.row.severity === 'Warning' ? '重要 Warning' : '一般 Info' }}
           </el-tag>
         </template>
       </el-table-column>
       <el-table-column label="轮询周期" width="110">
         <template #default="scope">
-          {{ scope.row.intervalSeconds }} 秒/次
+          {{ scope.row.intervalSeconds || 60 }} 秒/次
         </template>
       </el-table-column>
       <el-table-column label="开启状态" width="100" align="center">
         <template #default="scope">
-          <el-switch v-model="scope.row.isEnabled" @change="toggleRuleStatus(scope.row)" />
+          <el-switch 
+            :model-value="scope.row.status === 'Enable' || scope.row.isEnabled === true" 
+            @change="(val) => toggleRuleStatus(scope.row, val)" 
+          />
         </template>
       </el-table-column>
       <el-table-column width="160" fixed="right" align="center">
@@ -70,7 +76,7 @@
           <el-input v-model="form.name" placeholder="例如: 内存占用过高警报" />
         </el-form-item>
         <el-form-item label="检测指标维度">
-          <el-select v-model="form.metricType" style="width: 100%">
+          <el-select v-model="form.metric" style="width: 100%">
             <el-option label="CPU 使用率 (CpuUsage)" value="CpuUsage" />
             <el-option label="内存占用率 (MemoryUsage)" value="MemoryUsage" />
             <el-option label="磁盘占用率 (DiskUsage)" value="DiskUsage" />
@@ -122,14 +128,35 @@ const showModal = ref(false)
 const form = reactive({
   id: 0,
   name: '',
-  metricType: 'CpuUsage',
+  metric: 'CpuUsage',
   operator: '>',
-  threshold: 85.0,
+  threshold: 85,
   severity: 'Warning',
   intervalSeconds: 60,
-  isEnabled: true,
+  status: 'Enable',
   description: ''
 })
+
+const formatMetricName = (val) => {
+  if (!val) return '常规指标'
+  const map = {
+    CpuUsage: 'CPU 使用率',
+    MemoryUsage: '内存占用率',
+    DiskUsage: '磁盘空间',
+    Offline: '设备离线中断'
+  }
+  return map[val] || val
+}
+
+const getMetricTagType = (val) => {
+  const map = {
+    CpuUsage: 'primary',
+    MemoryUsage: 'warning',
+    DiskUsage: 'info',
+    Offline: 'danger'
+  }
+  return map[val] || 'primary'
+}
 
 const loadData = async () => {
   loading.value = true
@@ -147,19 +174,29 @@ const openAddDialog = () => {
   Object.assign(form, {
     id: 0,
     name: '',
-    metricType: 'CpuUsage',
+    metric: 'CpuUsage',
     operator: '>',
-    threshold: 85.0,
+    threshold: 85,
     severity: 'Warning',
     intervalSeconds: 60,
-    isEnabled: true,
+    status: 'Enable',
     description: ''
   })
   showModal.value = true
 }
 
 const openEditDialog = (row) => {
-  Object.assign(form, row)
+  Object.assign(form, {
+    id: row.id,
+    name: row.ruleName || row.name,
+    metric: row.metric || row.metricType || 'CpuUsage',
+    operator: row.operator || '>',
+    threshold: row.threshold ? Number(row.threshold) : 80,
+    severity: row.severity || 'Warning',
+    intervalSeconds: row.intervalSeconds || 60,
+    status: row.status || 'Enable',
+    description: row.description || ''
+  })
   showModal.value = true
 }
 
@@ -168,7 +205,12 @@ const submitForm = async () => {
     ElMessage.warning('请输入规则名称')
     return
   }
-  const res = await saveAlarmRule(form)
+  const payload = {
+    ...form,
+    ruleName: form.name,
+    threshold: String(form.threshold)
+  }
+  const res = await saveAlarmRule(payload)
   if (res.success) {
     ElMessage.success('告警规则配置保存成功')
     showModal.value = false
@@ -176,10 +218,12 @@ const submitForm = async () => {
   }
 }
 
-const toggleRuleStatus = async (row) => {
+const toggleRuleStatus = async (row, val) => {
+  row.status = val ? 'Enable' : 'Disable'
+  row.isEnabled = val
   const res = await saveAlarmRule(row)
   if (res.success) {
-    ElMessage.success(`告警规则 [${row.name}] 已${row.isEnabled ? '启用' : '禁用'}`)
+    ElMessage.success(`告警规则 [${row.ruleName || row.name}] 已${val ? '启用' : '禁用'}`)
   }
 }
 
